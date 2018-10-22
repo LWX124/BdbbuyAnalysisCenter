@@ -1,5 +1,5 @@
 <template>
-  <div><h1>销售数据</h1></div>
+  <div><h1>销售数据（暂时未上线）</h1></div>
 
 </template>
 

@@ -11,9 +11,9 @@ from Tools.model_util import CModel
 LOW_QTY_COUNT = 5
 
 class ProductStatus(Enum):
-    ProductAll='0'
-    ProductOnsale='1'
-    ProductOffsale='2'
+    ProductAll=0
+    ProductOnsale=1
+    ProductOffsale=2
 
 
 
@@ -68,12 +68,45 @@ class Product(CModel):
         db_table = 'product'
 
     @classmethod
-    def get_lowcount_outofdate_products(cls):
-        onsale_products = Product.objects.filter(status=ProductStatus.ProductOnsale.value)
+    def get_lowcount_outofdate_products(cls, **kwargs):
+        low_count = kwargs.get('low_count', 0)
         products = []
-        lowcount_products = [product for product in onsale_products if ProductStock.if_low(product_id=product.product_id)]
-        products.extend(lowcount_products)
+        for stock in ProductStock.get_low_qty_data(low_count=low_count):
+            product_list = Product.objects.filter(product_id=stock.product_id)
+            if product_list and len(product_list) > 0:
+                product = product_list[0]
+                if ProductStatus.ProductOnsale.value == product.status:
+                    products.append(product)
         return products
+
+    def toJson(self):
+        product_qty = ProductStock.get_product_stock(product_id=self.product_id)
+        json_dic = {
+            'product_id': self.product_id,
+            'sku': self.sku,
+            'en_name': self.en_name,
+            'name': self.name,
+            'price': self.price,
+            'purchase_price': self.purchase_price,
+            'description': self.description,
+            'manufacturer': self.manufacturer,
+            'images_num': self.images_num,
+            'search_key': self.search_key,
+            'status': self.status,
+            'tax_id': self.tax_id,
+            'shop_ids': self.shop_ids,
+            'cat_ids': self.cat_ids,
+            'special_price': self.special_price,
+            'special_price_start': self.special_price_start,
+            'special_price_end': self.special_price_end,
+            'total_sell': self.total_sell,
+            'create_at': self.create_at,
+            'quality_date': self.quality_date,
+            'show_index': self.show_index,
+            'product_qty': product_qty
+        }
+        return json_dic
+
 
 
 
@@ -118,16 +151,33 @@ class ProductStock(CModel):
         unique_together = (('shop_id', 'product_id'),)
 
     @classmethod
-    def if_low(cls, product_id):
+    def get_low_qty_data(cls, low_count):
+        product_list = ProductStock.objects.filter(qty__lte=low_count)
+        return product_list
+
+    @classmethod
+    def if_low(cls, product_id, low_count):
         result = False
         try:
-            product_list = ProductStock.objects.get(product_id=product_id)
-            product = product_list[0]
-            result = (product and int(product.qty) < LOW_QTY_COUNT)
+            product = ProductStock.objects.get(product_id=product_id)
+            result = (product and int(product.qty) < low_count)
         except Exception as e:
             result = True
 
         return result
+
+    @classmethod
+    def get_product_stock(cls, product_id):
+        count = 0
+        try:
+            product = ProductStock.objects.get(product_id=product_id)
+            count = product.qty
+            print(product.product_id)
+            print(product.qty)
+        except Exception as e:
+            print(e)
+        return count
+
 
 
 

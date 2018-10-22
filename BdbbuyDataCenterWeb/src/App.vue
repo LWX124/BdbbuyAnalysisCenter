@@ -7,10 +7,15 @@
         <Icon type="ios-stats" />
         销售统计
       </MenuItem>
-      <MenuItem name="inventoryWarning">
-        <Icon type="ios-warning" />
-        库存预警
-      </MenuItem>
+      <Submenu name="2">
+        <template slot="title">
+          <Icon type="ios-warning"></Icon>
+          库存预警
+        </template>
+        <MenuItem name="inventoryWarning_count" id="inventoryWarning_1">按个数筛选</MenuItem>
+        <MenuItem name="inventoryWarning_ordercount" id="inventoryWarning_2" disabled>按销量筛选</MenuItem>
+        <MenuItem name="inventoryWarning_date" id="inventoryWarning_3" disabled>筛选过期商品</MenuItem>
+      </Submenu>
 
     </Menu>
     <router-view/>
@@ -35,7 +40,16 @@
 
     methods: {
       gotoPage:function (name) {
-        this.$router.push({path: name})
+        console.log(name)
+        var pageName = name
+        var routerParam = {path: pageName}
+        if (name.indexOf('inventoryWarning_') != -1) {
+          var pageNameList = name.split('_')
+          pageName = pageNameList[0]
+          routerParam = {path: pageName, query:{type: pageNameList[1]}}
+        }
+
+        this.$router.push(routerParam)
       }
     }
   }
